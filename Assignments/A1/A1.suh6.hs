@@ -22,12 +22,18 @@ module A1 where
         | y == x = True
         | otherwise = elem y xs
 
+    -- this is a helper function for pos. it creates a list of tuples representing an element in a list and it's index
+    createIndexedList :: [a] -> [b] -> [(a,b)]
+    createIndexedList _ [] = []
+    createIndexedList [] _ = []
+    createIndexedList (x:xs) (y:ys) = (x,y) : createIndexedList xs ys
+
     -- pos type signature:
     pos :: (Eq a) => a -> [a] -> [Integer]
     -- we can create a list of tuples from the original list, associating each value with it's index
     -- in the list. Then we use list comprehension to filter. Note 
     pos _ [] = []
-    pos y xs = [i | (x, i) <- zip xs [0..], y == x]
+    pos y xs = [i | (x, i) <- createIndexedList xs [0..], y == x]
 
     --QUESTION2
     -- apply all function type signature
