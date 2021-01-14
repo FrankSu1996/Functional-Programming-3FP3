@@ -17,4 +17,4 @@ module Jan12 where
 
     -- if we want to print something
     main :: IO ()
-    main = print "Hellworld!"
+    main = print "Hellworld
