@@ -44,7 +44,31 @@ module A1 where
     -- a)
     -- tripleNeg1 Type signature
     tripleNeg1 :: (Ord a, Num a) => [a] -> [a]
+    -- base case: applying function to an empty list returns an empty list
+    tripleNeg1 [] = []
+    -- recursive case: apply function to head of list, then recurse with the tail of the list
+    tripleNeg1 (x : xs)
+        | x >= 0 = x : tripleNeg1 xs
+        | otherwise = 3 * x : tripleNeg1 xs
 
     -- b)
+    -- f is a function definition we create to be passed into map. Using either, we either apply 3* function, 
+    -- or we apply a function that merely returns the element
+    f :: (Ord a, Num a) => Either a a -> a
+    f = either (*3) (\r -> r)
+
+    -- createEitherArray is a function that takes a list of ordinal numbers, and returns a list of Eithers
+    createEitherArray :: (Ord a, Num a) => [a] -> [Either a a]
+    createEitherArray [] = []
+    createEitherArray (x : xs)
+        | x < 0 = Left x : createEitherArray xs
+        | otherwise = Right x : createEitherArray xs
+
     -- tripleNeg2 type signature
     tripleNeg2 :: (Ord a, Num a) => [a] -> [a]
+    -- applying function to an empty list returns an empty list
+    tripleNeg2 [] = []
+    -- we can curry our defined functions f and createEitherArray with map to produce our result
+    tripleNeg2 xs = map f (createEitherArray xs)
+
+    --QUESTION4 
