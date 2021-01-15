@@ -1,5 +1,6 @@
 module A1 where
-    import Prelude hiding (sum, product, elem)
+
+    import Prelude hiding (sum, product, elem, zip, reverse)
 
     -- QUESTION 1
     -- matches type signature: 
@@ -23,17 +24,17 @@ module A1 where
         | otherwise = elem y xs
 
     -- this is a helper function for pos. it creates a list of tuples representing an element in a list and it's index
-    createIndexedList :: [a] -> [b] -> [(a,b)]
-    createIndexedList _ [] = []
-    createIndexedList [] _ = []
-    createIndexedList (x:xs) (y:ys) = (x,y) : createIndexedList xs ys
+    zip :: [a] -> [b] -> [(a,b)]
+    zip _ [] = []
+    zip [] _ = []
+    zip (x:xs) (y:ys) = (x,y) : zip xs ys
 
     -- pos type signature:
     pos :: (Eq a) => a -> [a] -> [Integer]
     -- we can create a list of tuples from the original list, associating each value with it's index
     -- in the list. Then we use list comprehension to filter. Note 
     pos _ [] = []
-    pos y xs = [i | (x, i) <- createIndexedList xs [0..], y == x]
+    pos y xs = [i | (x, i) <- zip xs [0..], y == x]
 
     --QUESTION2
     -- apply all function type signature
@@ -77,4 +78,105 @@ module A1 where
     -- we can curry our defined functions f and createEitherArray with map to produce our result
     tripleNeg2 xs = map f (createEitherArray xs)
 
-    --QUESTION4 
+    --QUESTION4
+    -- data type definition
+    data OrBoth a b = One a | Other b | Both a b
+    --consume1 type definition
+    consume1 :: (a -> c) -> (b -> c) -> (a -> b -> c) -> OrBoth a b -> c
+    -- consuming type One x will apply the first function in the argument list
+    consume1 f _ _ (One x) = f x
+    -- consuming type Other y will apply the second function in the argument list
+    consume1 _ g _ (Other y) = g y
+    -- consuming type Both x y will apply the third function the in argument list to both x and y
+    consume1 _ _ g (Both x y) = g x y
+
+    -- consume2 type definition
+    consume2 :: (a -> c) -> (b -> c) -> (c -> c -> c) -> OrBoth a b -> c
+    -- consuming type One x will again apply the first function
+    consume2 f _ _ (One x) = f x
+    -- consuming type Other y will again apply the second function
+    consume2 _ g _ (Other y) = g y
+    -- 'both' case: consuming type Both x y will apply the third function to the the output produced by 
+    -- f x and g y, thereby consuming all of the arguments
+    consume2 f g h (Both x y) = h (f x) (g y)
+
+    --QUESTION5
+    -- Ternary tree data type definition
+    data Ternary a = TLeaf a | TNode  (Ternary a) (Ternary a) (Ternary a) deriving (Show)
+
+    -- mirror type definition
+    mirror :: Ternary a -> Ternary a
+    -- base case: mirror of a leaf node is just the leaf node
+    mirror (TLeaf a) =  TLeaf a
+    -- recursive case: to mirror a node in the tree, we keep its middle child the same, while recursing with switched left and right childs
+    mirror (TNode left middle right) = TNode (mirror right) middle (mirror left)
+
+    -- flattenTernary type definition
+    flattenTernary :: Ternary a -> [a]
+    -- base case: flattening a leaf node produces a list with the single node
+    flattenTernary (TLeaf a) = [a]
+    -- recursive case: flattening a ternary tree; we can concatenate the lists produced by recursively flattening the
+    -- left subtree, then the middle subtree, then the right subtree
+    flattenTernary (TNode left middle right) = flattenTernary left ++ flattenTernary middle ++ flattenTernary right
+
+    -- QUESTION 6
+
+    -- QUESTION 7
+    -- mystery type definition
+    mystery :: ((a, b) -> c) -> [a] -> [b] -> [c]
+    -- the zip function produces an empty list whenever either argument is an empty list
+    mystery _ [] _ = []
+    mystery _ _ [] = []
+    -- recursive case: we apply f to a tuple created with the head of the lists, then concat the output
+    -- the recursive call with the tails
+    mystery f (x : xs) (y : ys) = let tuple = (x,y) in f tuple : mystery f xs ys
+    
+    -- QUESTION 8
+    -- foldRight function definition, taken from Jan14 lesson code
+    foldRight :: (a -> b -> b) -> b -> [a] -> b
+    foldRight f start [] = start
+    foldRight f start (x:xs) = x `f` foldRight f start xs
+
+    -- helper function: a lambda function that takes an element, a list of elements, and appends the element to the end of the list
+    appendToEnd :: a -> [a] -> [a]
+    appendToEnd = (\a b -> b ++ [a])
+
+    -- to reverse a list, we apply foldRight with our helper function, using an empty list as our accumulator, and the list s 
+    -- we wish to reverse
+    reverse :: [a] -> [a]
+    reverse [] = []
+    reverse xs = foldRight appendToEnd [] xs
+    
+
+    -- QUESTION 9
+    -- binary tree type definition
+    data Tree a = Tip | Node (Tree a) a (Tree a) deriving (Show)
+    -- mirrorTree code taken from A1 pdf
+    mirrorTree :: Tree a -> Tree a
+    mirrorTree Tip = Tip
+    mirrorTree (Node l a r) = Node (mirrorTree r) a (mirrorTree l)
+
+    -- pre type definition
+    pre :: Tree a -> [a]
+    -- base case: preorder traversal of a tip yields an empty list
+    pre Tip = []
+    -- recursive case: preorder traveral of a binary tree; first collect value stored at the root, then
+    -- collect the values at the left subtree, then collect values at the right subtree
+    pre (Node l a r) = [a] ++ pre l ++ pre r
+    
+    --post type definition
+    post :: Tree a -> [a]
+    -- base case: postorder traversal of a tip yields an empty list
+    post Tip = []
+    -- recursive case: postorder traveral of a binary tree; first recursively collect values stored in left subtree, then
+    -- recursively collect the values in the right subtree, then collect value at the root node
+    post (Node l a r) = post l ++ post r ++ [a]
+
+    --QUESTION 10
+    -- Rose tree type definition
+    data Rose a = Rose a [Rose a]
+    data Fork a = Leaf a | Branch (Fork a) (Fork a)
+
+    --type definition for to'
+    to' :: Tree a -> [Rose a]
+    to' Tip = []
