@@ -109,7 +109,7 @@ module A1 where
     -- base case: mirror of a leaf node is just the leaf node
     mirror (TLeaf a) =  TLeaf a
     -- recursive case: to mirror a node in the tree, we keep its middle child the same, while recursing with switched left and right childs
-    mirror (TNode left middle right) = TNode (mirror right) middle (mirror left)
+    mirror (TNode left middle right) = TNode (mirror right) (mirror middle) (mirror left)
 
     -- flattenTernary type definition
     flattenTernary :: Ternary a -> [a]
