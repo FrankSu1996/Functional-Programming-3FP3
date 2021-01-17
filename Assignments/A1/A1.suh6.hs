@@ -32,7 +32,7 @@ module A1 where
     -- pos type signature:
     pos :: (Eq a) => a -> [a] -> [Integer]
     -- we can create a list of tuples from the original list, associating each value with it's index
-    -- in the list. Then we use list comprehension to filter. Note 
+    -- in the list. Then we use list comprehension to filter
     pos _ [] = []
     pos y xs = [i | (x, i) <- zip xs [0..], y == x]
 
@@ -120,6 +120,28 @@ module A1 where
     flattenTernary (TNode left middle right) = flattenTernary left ++ flattenTernary middle ++ flattenTernary right
 
     -- QUESTION 6
+    -- DEFINITIONS
+    -- Range split definition: all p (xs ++ ys) = all p xs && all p ys
+    -- Universal quanitification definition:
+    -- all :: (a -> Bool) -> [a] -> Bool
+    -- all p [] = True
+    -- all p (x:xs) = p x && all p xs
+
+    -- PROOF BY STRUCTURAL INDUCTION
+    -- Base case: xs = []b
+    -- all p ([] ++ ys) = all p [] && all p ys                         1. By Range split definition
+    -- all p ([] ++ ys) = true && all p ys                             2. By Universal quantification definition
+    -- all p ([] ++ ys) = all p ys                                     3. By Idendity of &&
+    -- all p ys = all p ys                                             4. By Idendity of ++,
+    -- Thus, proven by equality of lhs and rhs
+
+    -- Inductive Step: assume inductive hypotheses holds: all p (xs ++ ys) = all p xs && all p ys
+    -- we must prove:
+    -- all p ((x:xs) ++ ys)    = all p (x:xs) && all p ys                 1. By Range split definition
+    -- all p (x:(xs ++ ys))    = all p (x:xs) && all p ys                 2. By (++.2), taken from page 144 of textbook
+    -- p x && all p (xs ++ ys) = all p (x:xs) && all p ys                 3. By Universal quanitification definition
+    -- p x && all p xs && all p ys = p x && all p xs && all p ys          4. By inductive hypothesis
+    -- Thus, proven by equality of lhs and rhs
 
     -- QUESTION 7
     -- mystery type definition
@@ -139,7 +161,7 @@ module A1 where
 
     -- helper function: a lambda function that takes an element, a list of elements, and appends the element to the end of the list
     appendToEnd :: a -> [a] -> [a]
-    appendToEnd = (\a b -> b ++ [a])
+    appendToEnd a b = b ++ [a]
 
     -- to reverse a list, we apply foldRight with our helper function, using an empty list as our accumulator, and the list s 
     -- we wish to reverse
@@ -172,11 +194,47 @@ module A1 where
     -- recursively collect the values in the right subtree, then collect value at the root node
     post (Node l a r) = post l ++ post r ++ [a]
 
+    -- Prove P(t) = pre (mirrorTree t) = reverse (post t)
+    -- base case: t = Tip
+    -- pre (mirrorTree Tip) = reverse (post Tip)
+    -- pre (Tip) = reverse ([])                                     1. definition of mirrorTree, definition of post
+    -- [] = []                                                      1. definition of pre, reverse of an empty list is empty list
+    -- Thus, proven by equality of lhs and rhs
+
+    -- Inductive step: Assume P(t) holds for trees T1 and T2. Thus, our inductive hypothesis are:
+    -- pre (mirrorTree T1) = reverse (post T1), pre (mirrorTree T2) = reverse (post T2)
+    -- then we can make a new tree T3 with root value x as: Node (T1) x (T2), we now prove that P(t) holds for T3
+    -- pre (mirrorTree (Node T1 x T2))                           = reverse (post (Node T1 x T2))                            1. P(T3)
+    -- pre (Node (mirrorTree T2) x (mirrorTree T1))              = reverse (post T1 ++ post T2 ++ x)                        2. apply definition of mirrorTree to lhs, definition of post to rhs
+    -- [x] ++ pre (mirrorTree T2) ++ (pre mirrorTree T1)         = reverse (post T1 ++ postT2 ++ x)                         3. apply definition of pre to lhs
+    -- [x] ++ reverse (post T2) ++ reverse (post T1)             = reverse (post T1 ++ postT2 ++ x)                         4. apply induction hypothesis to lhs
+    -- [x] ++ reverse (post T2) ++ reverse (post T1)             = reverse [x] ++ reverse (post T2) ++ reverse (post T1)    5. apply reverse on the rhs
+    -- [x] ++ reverse (post T2) ++ reverse (post T1)             = [x] ++ reverse (post T2) ++ reverse (post T1)            5. reverse of single element list returns the same list
+    -- Thus, proven by equality of lhs and rhs
+
     --QUESTION 10
     -- Rose tree type definition
-    data Rose a = Rose a [Rose a]
-    data Fork a = Leaf a | Branch (Fork a) (Fork a)
+    data Rose a = Rose a [Rose a] deriving (Show)
+    data Fork a = Leaf a | Branch (Fork a) (Fork a) deriving (Show)
 
     --type definition for to'
     to' :: Tree a -> [Rose a]
+    -- base case: an empty tree yields an empty list
     to' Tip = []
+    -- case of Leaf node: return a list holding a single rose tree with an empty list as it's children
+    to' (Node Tip v Tip) = [Rose v []]
+    -- case of tree with a left subtree with no right subtree
+    to' (Node left v Tip) = [Rose v (to' left)]
+    -- case of tree with right subtree with no left subtree
+    to' (Node Tip v right) = [Rose v (to' right)]
+    -- case of tree with both left and right subtree: we need to concatenate the lists produced by recursing down both subtrees
+    to' (Node left v right) = [Rose v (to' left ++ to' right)]
+
+    --type definition for from'
+    from' :: [Rose a] -> Tree a
+    from' [] = Tip
+    from' [Rose a []] = Node Tip a Tip
+    
+    -- type definition for to
+    to :: Rose a -> Fork a
+    to (Rose a []) = Leaf a
