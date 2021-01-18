@@ -230,14 +230,11 @@ module A1 where
     -- case of tree with both left and right subtree: we need to concatenate the lists produced by recursing down both subtrees
     to' (Node left v right) = [Rose v (to' left ++ to' right)]
 
-    foldLeft :: (t -> a -> t -> t) -> t -> [a] -> t
-    foldLeft f start [] = start
-    
-    listToRose :: [Rose a] -> [Rose a]
-    listToRose (x:xs) = case x of Rose a [] -> [Rose a xs]
-
     --type definition for from'
     from' :: [Rose a] -> Tree a
     from' [] = Tip
     from' [Rose a []] = Node Tip a Tip
-    from' [Rose a (x:xs)] = Node (from' [x]) a (from' xs) 
+    
+    -- type definition for to
+    to :: Rose a -> Fork a
+    to (Rose a []) = Leaf a
